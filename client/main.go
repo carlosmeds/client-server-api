@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 )
 
 type ExchangeRate struct {
@@ -29,8 +31,21 @@ func main() {
 }
 
 func getExchangeRate() (ExchangeRate, error) {
-	resp, err := http.Get(url)
+	log.Println("[INFO] Getting exchange rate")
+	var timeout = 300 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
+		return ExchangeRate{}, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Fatalf("[ERROR] Timeout to get data from server, exceeded %v", timeout)
+		}
 		return ExchangeRate{}, err
 	}
 	defer resp.Body.Close()
