@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  sqlite3:
+    image: nouchka/sqlite3:latest
+    restart: always
+    volumes:
+      - ./db/:/root/db/
